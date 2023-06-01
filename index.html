@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.115/build/three.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.115/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.115/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.115/examples/js/controls/TransformControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.115.0/examples/js/geometries/ConvexGeometry.js"></script>
+</head>
+
+<body>
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+        const controls = new THREE.OrbitControls(camera, renderer.domElement)
+        const ambient = new THREE.AmbientLight(0x404040, 1);
+        scene.add(ambient);
+
+        const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+        const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+        camera.position.z = 2;
+
+        const geometry3 = new THREE.PlaneGeometry(2, 2);
+        const material3 = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
+        const plane = new THREE.Mesh(geometry3, material3);
+        // plane.rotation.set(-Math.PI / 2, 0, 0)
+        plane.castShadow = true;
+        plane.receiveShadow = true;
+        scene.add(plane);
+
+        const geometry4 = new THREE.SphereGeometry(0.1, 10, 10);
+        const material4 = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const mesh4 = new THREE.Mesh(geometry4, material4);
+        mesh4.position.set(
+            -0.8151056340012848,
+            -0.8717004950428405,
+            0)
+        scene.add(mesh4)
+        // console.log(mesh4);
+        let data = [mesh, mesh4, plane]
+
+        const raycaster = new THREE.Raycaster()
+        renderer.domElement.addEventListener('click', onMouseMove, false)
+        renderer.domElement.addEventListener('dblclick', onDoubleClick, false)
+        const mouse = new THREE.Vector2()
+        //  const transformControls = new THREE.TransformControls(camera, renderer.domElement)
+        // scene.add(transformControls)
+        // transformControls.addEventListener('mouseDown', function () {
+        //     controls.enabled = false
+        // })
+        // transformControls.addEventListener('mouseUp', function () {
+        //     controls.enabled = true
+        // })
+        // window.addEventListener('keydown', function (event) {
+        //     switch (event.key) {
+        //         case 'g':
+        //             transformControls.setMode('translate')
+        //             break
+        //         case 'r':
+        //             transformControls.setMode('rotate')
+        //             break
+        //         case 's':
+        //             transformControls.setMode('scale')
+        //             break
+        //     }
+        // })
+        // transformControls.attach(mesh4)
+        let dataa = [];
+        function onMouseMove(event) {
+            mouse.set(
+                (event.clientX / renderer.domElement.clientWidth) * 2 - 1,
+                -(event.clientY / renderer.domElement.clientHeight) * 2 + 1
+            )
+            raycaster.setFromCamera(mouse, camera)
+            const intersects = raycaster.intersectObjects(data)
+            if (intersects.length > 0) {
+                for (let index = 0; index < intersects.length; index++) {
+                    const element = intersects[index];
+                    console.log(element.point);
+                    dataa.push(element.point)
+                }
+                // console.log(intersects[0].object.material.wireframe)
+                // {
+                // intersects[0]
+                // intersects[0].object.material.color.set(0xff0000)
+
+                // click then hover effect
+                const geometry1 = new THREE.SphereGeometry(0.01, 32, 16);
+                const material1 = new THREE.MeshBasicMaterial({ color: 0x000000 });
+                const mesh1 = new THREE.Mesh(geometry1, material1);
+                mesh1.position.set(intersects[0].point.x, intersects[0].point.y, intersects[0].point.z)
+                scene.add(mesh1);
+            }
+        }
+        // dblclick 
+        function onDoubleClick(event) {
+            mouse.set(
+                (event.clientX / renderer.domElement.clientWidth) * 2 - 1,
+                -(event.clientY / renderer.domElement.clientHeight) * 2 + 1
+            )
+            raycaster.setFromCamera(mouse, camera)
+
+            const intersects = raycaster.intersectObjects(data)
+            if (intersects.length > 0) {
+                console.log(dataa);
+                const points = []
+                points.push(dataa)
+                console.log(points);
+                // points.push(intersects[0].point.clone())
+                const geometry = new THREE.BufferGeometry().setFromPoints(points[0])
+                let line = new THREE.LineSegments(
+                    geometry,
+                    new THREE.LineBasicMaterial({
+                        color: 0x000000,
+                        transparent: true,
+                        opacity: 1,
+                        // depthTest: false,
+                        // depthWrite: false
+                    })
+                )
+                // line.frustumCulled = false
+                scene.add(line)
+                console.log(line);
+            }
+        }
+
+        window.addEventListener('resize', onWindowResize, false)
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight
+            camera.updateProjectionMatrix()
+            renderer.setSize(window.innerWidth, window.innerHeight)
+            renderer()
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // mesh.rotation.x+=0.1
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+
+    </script>
+</body>
+
+</html>
